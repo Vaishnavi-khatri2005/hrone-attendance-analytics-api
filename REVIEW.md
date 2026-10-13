@@ -1,6 +1,6 @@
 # REVIEW.md — Part A Audit of Starter Code
 
-Comprehensive audit of the starter `app/main.py` provided in the candidate kit against `openapi.yaml`, `DATA_MODEL.md`, `PROBLEM_STATEMENT.docx`, and business rules R1–R10.
+Comprehensive audit of the starter `app/main.py` provided in the candidate kit against the API contract, database schema requirements, and business rules R1–R10.
 
 ---
 
@@ -8,7 +8,7 @@ Comprehensive audit of the starter `app/main.py` provided in the candidate kit a
 
 | # | Where (function / line) | What is wrong | How you'd notice it (test, input, or symptom) | How you fixed it |
 |---|---|---|---|---|
-| 1 | `load_dotenv` (init) | `.env` variables overrode process/OS environment variables because `load_dotenv()` was called without `override=False`. | When running with custom `MONGO_URI` injected by container/test runner, the hard-coded `.env` values overrode it, violating Section 4. | Changed to `load_dotenv(override=False)` so existing OS environment variables always take precedence. |
+| 1 | `load_dotenv` (init) | `.env` variables overrode process/OS environment variables because `load_dotenv()` was called without `override=False`. | When running with custom `MONGO_URI` injected by container/test runner, the hard-coded `.env` values overrode it. | Changed to `load_dotenv(override=False)` so existing OS environment variables always take precedence. |
 | 2 | Startup / Indexes | No database indexes were created at startup. The database only had the default `_id_` index. | Running `GET /admin/explain` or listing collection indexes showed `COLLSCAN` on large collections and duplicate employee codes could be inserted concurrently. | Added idempotent `init_indexes()` inside FastAPI `lifespan` creating unique index on `emp_code`, composite unique `(emp_code, date)`, and indexing `department`, `joined_on`, and sort keys. |
 | 3 | `GET /health` | Returned static `{"status": "ok"}` without pinging MongoDB or catching connection failures. | If MongoDB was unreachable or crashed, `GET /health` returned HTTP 200 instead of HTTP 503. | Replaced with active `client.admin.command("ping")`. Returns `{"status": "ok", "database": "connected"}` (HTTP 200) on success and HTTP 503 if unreachable. |
 | 4 | `POST /employees` | MongoDB `_id` (ObjectId) was returned in the response or caused serialization failure, and duplicate `emp_code` threw uncaught internal server error. | Inserting the same `emp_code` twice returned HTTP 500 instead of HTTP 409 Conflict. Responses leaked internal `_id`. | Handled `DuplicateKeyError` to return HTTP 409. Cleaned projection to exclude `_id` and return strictly the `EmployeeResponse` schema. |
