@@ -1,12 +1,11 @@
 """
-Employee Attendance & Analytics API - STARTER
+Employee Attendance & Analytics API
 
 Run:  uvicorn app.main:app --port 8000
-Env:  MONGO_URI, MONGO_DB (a local .env is loaded for convenience)
+Env:  MONGO_URI, MONGO_DB (read from environment variables or an optional local .env)
 
-This file was written quickly by a colleague who has left the company. The happy path
-works, but nobody has reviewed it. Read PROBLEM_STATEMENT.docx for what is expected of you,
-openapi.yaml for the contract and DATA_MODEL.md for what is stored in MongoDB.
+A FastAPI backend service backed by MongoDB for employee attendance tracking,
+work shifts, regularization audit history, and departmental analytics.
 """
 import json
 import os

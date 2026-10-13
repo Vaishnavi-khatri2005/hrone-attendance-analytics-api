@@ -36,14 +36,34 @@ pip install -r requirements.txt
 
 ### 2. Environment Configuration
 
-The application reads configuration from environment variables or a local `.env` file (existing OS environment variables always take precedence).
+The application requires two configuration parameters:
+- `MONGO_URI`: The MongoDB connection string (e.g., MongoDB Atlas or local MongoDB).
+- `MONGO_DB`: The target database name (e.g., `attendance_db`).
 
-Set environment variables in your terminal or create a `.env` file in the project root:
+Configuration can be set directly via shell environment variables or via an optional local `.env` file. **Existing environment variables always take precedence over a `.env` file, and `.env` files must never be committed to source control** (protected via `.gitignore`).
+
+#### Option A: Direct Shell Environment Variables
+
+**Windows (PowerShell):**
+```powershell
+$env:MONGO_URI = "mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority"
+$env:MONGO_DB = "attendance_db"
+```
+*(Or for a local MongoDB instance: `$env:MONGO_URI = "mongodb://localhost:27017"`)*
+
+**macOS / Linux (Bash / Zsh):**
+```bash
+export MONGO_URI="mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority"
+export MONGO_DB="attendance_db"
+```
+*(Or for a local MongoDB instance: `export MONGO_URI="mongodb://localhost:27017"`)*
+
+#### Option B: Optional Local `.env` File
+Alternatively, create an untracked `.env` file in the project root:
 ```ini
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority
 MONGO_DB=attendance_db
 ```
-*(Or for a local MongoDB instance: `mongodb://localhost:27017`)*
 
 ---
 
