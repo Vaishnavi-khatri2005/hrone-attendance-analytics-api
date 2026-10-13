@@ -1,8 +1,8 @@
 # Employee Attendance & Analytics API
 
-A robust, production-grade FastAPI service backed by MongoDB Atlas for managing employee work shifts, attendance punch-in/out cycles, regularization audit trails, and multi-dimensional departmental analytics.
+A FastAPI backend service backed by MongoDB for managing employee work shifts, attendance punch-in/out cycles, regularization audit trails, and departmental analytics.
 
-Built to comply strictly with the HROne Engineering Assignment Contract v2.0 (`openapi.yaml`, `DATA_MODEL.md`, `rulebook.md`).
+Implements the contract defined in `openapi.yaml` and the data schema in `DATA_MODEL.md`.
 
 ---
 
@@ -11,7 +11,7 @@ Built to comply strictly with the HROne Engineering Assignment Contract v2.0 (`o
 - **Python**: 3.11+
 - **Framework**: FastAPI (v0.110+)
 - **Server**: Uvicorn (v0.29+)
-- **Database**: MongoDB (6.0+ / Atlas M0+) via PyMongo (v4.7+)
+- **Database**: MongoDB (6.0+ / Atlas) via PyMongo (v4.7+)
 - **Data Validation**: Pydantic v2 (v2.6+)
 
 ---
@@ -36,20 +36,20 @@ pip install -r requirements.txt
 
 ### 2. Environment Configuration
 
-The application reads configuration from environment variables or a local `.env` file (existing OS environment variables always take precedence).
+The application reads configuration from environment variables or a local `.env` file (existing environment variables take precedence).
 
 Create a `.env` file in the project root:
 ```ini
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority
 MONGO_DB=attendance_db
 ```
-*(Alternatively, for local Docker: `mongodb://localhost:27017`)*
+*(Or for a local MongoDB instance: `mongodb://localhost:27017`)*
 
 ---
 
 ## Seeding Sample Data
 
-To populate the initial sample dataset (from `sample_data/employees.json` and `sample_data/attendance_logs.json`):
+To populate the sample dataset from `sample_data/` into your configured database:
 
 ```bash
 python sample_seed.py
@@ -59,7 +59,7 @@ python sample_seed.py
 
 ## Starting the Service
 
-Start the application from the repository root using the assignment-mandated command:
+Start the application from the repository root using the command:
 
 ```bash
 uvicorn app.main:app --port 8000
@@ -74,41 +74,36 @@ uvicorn app.main:app --port 8000
 ## API Endpoints & Features
 
 ### Core Operations
-- `GET /health` — Active ping against MongoDB Atlas (returns HTTP 200 when connected, HTTP 503 on failure).
-- `POST /employees` — Register an employee (returns HTTP 409 on duplicate `emp_code`).
+- `GET /health` — Verifies connectivity to MongoDB (HTTP 200 on success, HTTP 503 if unreachable).
+- `POST /employees` — Creates an employee record (HTTP 409 on duplicate `emp_code`).
 - `GET /employees` — Paginated list of employees with optional `department` filtering, sorted by `emp_code`.
-- `POST /attendance/punch-in` — Register attendance punch-in; enforces IST shifts, overnight shift detection, R2 10-minute grace period floor calculation, and race condition prevention.
+- `POST /attendance/punch-in` — Records attendance punch-in; handles IST shift boundaries, overnight shifts, 10-minute grace period floor calculation (R2), and duplicate punch prevention.
 - `GET /attendance` — Reverse-chronological attendance records list with date, employee, and status filters.
-- `POST /attendance/punch-out` — Atomic punch-out with overnight support, R3 overtime threshold (>=30 min), R4 round-half-up work hours, and R5 half-day calculation.
-- `PATCH /attendance/{emp_code}/{date}` — Optimistically-locked regularization endpoint appending before/after audit records to `history` without losing concurrent updates.
+- `POST /attendance/punch-out` — Updates punch-out time, computing overtime (R3, threshold >=30 min), work hours (R4, round-half-up), and half-day status (R5).
+- `PATCH /attendance/{emp_code}/{date}` — Regularization endpoint appending before/after audit records to `history` with optimistic concurrency checks.
 
 ### Analytics & Reporting
-- `GET /analytics/employees/{emp_code}/monthly` — Monthly employee attendance metrics, expected vs actual working days (excluding weekends), total work hours, overtime, and late arrivals.
-- `GET /analytics/departments/summary` — Cross-collection aggregation including all eligible employees (even with 0 attendance logs) as of period end.
+- `GET /analytics/employees/{emp_code}/monthly` — Monthly employee attendance metrics, expected working days (excluding weekends), total work hours, overtime, and late arrivals.
+- `GET /analytics/departments/summary` — Cross-collection aggregation including all eligible employees (including those with zero attendance logs) as of period end.
 - `GET /analytics/leaderboard/late` — Standard competition ranking (`1, 2, 2, 4`) for late arrivals with deterministic tie-breaking.
-- `GET /analytics/departments/{department}/trend` — Daily attendance series with gap-filling (`$densify`) and rolling 7-day moving averages.
-- `GET /admin/explain/{endpoint}` — Real query execution stats verifying index scans (`IXSCAN`) across all major listing and analytics pipelines.
+- `GET /analytics/departments/{department}/trend` — Daily attendance series with gap-filling (`$densify`) and 7-day moving averages.
+- `GET /admin/explain/{endpoint}` — MongoDB `explain("executionStats")` verifying index usage across supported queries and aggregation pipelines.
 
 ---
 
-## Running Project Verification Tests
+## Running Verification Tests
 
-Unit and integration test suites covering all business rules and endpoints are included.
+The repository includes a standalone unit test suite in `tests/test_rules.py` verifying business rules R1 through R5:
 
-To execute the test verification suite:
-```powershell
-.\.venv\Scripts\python.exe -c "
-import glob, subprocess, sys
-scripts = sorted(glob.glob('scratch/test_step*.py'))
-for s in scripts:
-    res = subprocess.run([sys.executable, s], capture_output=True, text=True)
-    print(f'Ran {s}: {\"PASSED\" if res.returncode == 0 else \"FAILED\"}')
-"
+```bash
+python tests/test_rules.py
 ```
+
+*(Alternatively, run `pytest` if pytest is installed in your environment).*
 
 ---
 
 ## Known Limitations
 
-- The service requires MongoDB 6.0+ for `$densify` and `$setWindowFields` aggregation stages.
-- External holiday calendars are not tracked; per rule R7, standard working days are strictly Monday through Friday.
+- Requires MongoDB 6.0 or newer to support aggregation pipeline stages `$densify` and `$setWindowFields`.
+- Per business rule R7, working days are strictly Monday through Friday; company holiday calendars are not tracked.
