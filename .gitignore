@@ -1,0 +1,23 @@
+# Environment and secrets
+.env
+*.env
+!.env.example
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Operating system / IDE files
+.DS_Store
+Thumbs.db
