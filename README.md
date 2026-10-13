@@ -2,7 +2,7 @@
 
 A FastAPI backend service backed by MongoDB for managing employee work shifts, attendance punch-in/out cycles, regularization audit trails, and departmental analytics.
 
-Implements the contract defined in `openapi.yaml` and the data schema in `DATA_MODEL.md`.
+The service provides complete RESTful endpoints for attendance tracking, compliance business rules, and MongoDB aggregation pipelines.
 
 ---
 
@@ -36,9 +36,9 @@ pip install -r requirements.txt
 
 ### 2. Environment Configuration
 
-The application reads configuration from environment variables or a local `.env` file (existing environment variables take precedence).
+The application reads configuration from environment variables or a local `.env` file (existing OS environment variables always take precedence).
 
-Create a `.env` file in the project root:
+Set environment variables in your terminal or create a `.env` file in the project root:
 ```ini
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-address>/?retryWrites=true&w=majority
 MONGO_DB=attendance_db
@@ -49,7 +49,11 @@ MONGO_DB=attendance_db
 
 ## Seeding Sample Data
 
-To populate the sample dataset from `sample_data/` into your configured database:
+The repository includes sample starter datasets in `sample_data/`:
+- `sample_data/employees.json`
+- `sample_data/attendance_logs.json`
+
+To populate these records into your configured MongoDB database:
 
 ```bash
 python sample_seed.py
@@ -66,8 +70,8 @@ uvicorn app.main:app --port 8000
 ```
 
 - **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
-- **Interactive OpenAPI Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **ReDoc Documentation**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- **Interactive API Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Alternative Documentation (ReDoc)**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
 ---
 
@@ -99,11 +103,9 @@ The repository includes a standalone unit test suite in `tests/test_rules.py` ve
 python tests/test_rules.py
 ```
 
-*(Alternatively, run `pytest` if pytest is installed in your environment).*
-
 ---
 
 ## Known Limitations
 
 - Requires MongoDB 6.0 or newer to support aggregation pipeline stages `$densify` and `$setWindowFields`.
-- Per business rule R7, working days are strictly Monday through Friday; company holiday calendars are not tracked.
+- Per business rules, working days are strictly Monday through Friday; company holiday calendars are not tracked.
